@@ -197,30 +197,29 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     ops1.append("0.1 0.25 0.5 rg 0 750 595 2 re f")
     ops1.append("0.85 0.9 0.95 rg 40 775 120 40 re f")
     ops1.append("0.1 0.25 0.5 rg 40 775 120 40 re S")
-    ops1.append("BT /HelvBold 12 Tf 0.1 0.25 0.5 rg 50 795 Tm")
-    ops1.append(f"({buyer[:15]}) Tj ET")
+    ops1.append("BT /HelvBold 12 Tf 0.1 0.25 0.5 rg")
+    ops1.append(f"1 0 0 1 50 795 Tm ({buyer[:15]}) Tj ET")
     ops1.append("0.85 0.9 0.95 rg 460 770 100 30 re f")
     ops1.append("0.1 0.3 0.6 rg 460 770 100 30 re S")
-    ops1.append("BT /HelvBold 8 Tf 0.1 0.3 0.6 rg 470 785 Tm")
-    ops1.append("(Secured) Tj ET")
-    ops1.append("BT /HelvBold 24 Tf 0 0 0 rg 50 680 Tm")
-    ops1.append("(Customization Requirements Specification) Tj ET")
-    ops1.append("BT /Helv 12 Tf 0 0 0 rg 50 620 Tm")
-    ops1.append(f"(Dear {supplier} Team,) Tj ET")
-    ops1.append("BT /Helv 11 Tf 50 590 Tm")
-    ops1.append("(We have finalized our customization requirements for the product. Please find) Tj ET")
-    ops1.append("BT /Helv 11 Tf 50 575 Tm")
-    ops1.append("(the detailed specifications on the next page. Kindly review and confirm your) Tj ET")
-    ops1.append("BT /Helv 11 Tf 50 560 Tm")
-    ops1.append("(ability to meet these requirements by clicking the button below.) Tj ET")
-    ops1.append("BT /Helv 11 Tf 50 545 Tm")
-    ops1.append("(We look forward to your confirmation.) Tj ET")
-    ops1.append(f"BT /HelvBold 11 Tf 0.1 0.25 0.5 rg 50 500 Tm (Document No.: {doc_no}) Tj ET")
-    ops1.append(f"BT /Helv 11 Tf 0 0 0 rg 50 480 Tm (Date: {date_str}) Tj ET")
-    ops1.append(f"BT /Helv 11 Tf 50 460 Tm (Product: {product} v{version}) Tj ET")
-    ops1.append(f"BT /Helv 11 Tf 50 440 Tm (Response Due: {expiry}) Tj ET")
-    ops1.append("BT /Helv 8 Tf 0.3 0.3 0.3 rg 50 50 Tm")
-    ops1.append("(This document contains proprietary information. Please confirm receipt and compliance.) Tj ET")
+    ops1.append("BT /HelvBold 8 Tf 0.1 0.3 0.6 rg")
+    ops1.append("1 0 0 1 470 785 Tm (Secured) Tj ET")
+    ops1.append("BT /HelvBold 24 Tf 0 0 0 rg")
+    ops1.append("1 0 0 1 50 680 Tm (Customization Requirements Specification) Tj ET")
+    ops1.append("BT /Helv 12 Tf 0 0 0 rg")
+    ops1.append(f"1 0 0 1 50 620 Tm (Dear {supplier} Team,) Tj ET")
+    ops1.append("BT /Helv 11 Tf")
+    ops1.append("1 0 0 1 50 590 Tm (We have finalized our customization requirements for the product. Please find) Tj ET")
+    ops1.append("1 0 0 1 50 575 Tm (the detailed specifications on the next page. Kindly review and confirm your) Tj ET")
+    ops1.append("1 0 0 1 50 560 Tm (ability to meet these requirements by clicking the button below.) Tj ET")
+    ops1.append("1 0 0 1 50 545 Tm (We look forward to your confirmation.) Tj ET")
+    ops1.append("BT /HelvBold 11 Tf 0.1 0.25 0.5 rg")
+    ops1.append(f"1 0 0 1 50 500 Tm (Document No.: {doc_no}) Tj ET")
+    ops1.append("BT /Helv 11 Tf 0 0 0 rg")
+    ops1.append(f"1 0 0 1 50 480 Tm (Date: {date_str}) Tj ET")
+    ops1.append(f"1 0 0 1 50 460 Tm (Product: {product} v{version}) Tj ET")
+    ops1.append(f"1 0 0 1 50 440 Tm (Response Due: {expiry}) Tj ET")
+    ops1.append("BT /Helv 8 Tf 0.3 0.3 0.3 rg")
+    ops1.append("1 0 0 1 50 50 Tm (This document contains proprietary information. Please confirm receipt and compliance.) Tj ET")
     content1 = pdf.make_indirect(Stream(pdf, "\n".join(ops1).encode('utf-8')))
     page1.Contents = content1
     page1.Resources = resources
@@ -247,9 +246,10 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     ops2 = []
     ops2.append("0.95 0.97 1.0 rg 0 0 595 842 re f")
     ops2.append("0.1 0.25 0.5 rg 0 750 595 2 re f")
-    ops2.append("BT /HelvBold 20 Tf 0 0 0 rg 50 700 Tm")
-    ops2.append("(Detailed Customization Requirements) Tj ET")
-    ops2.append(f"BT /Helv 11 Tf 0.3 0.3 0.3 rg 50 680 Tm (Document No.: {doc_no}  |  Date: {date_str}) Tj ET")
+    ops2.append("BT /HelvBold 20 Tf 0 0 0 rg")
+    ops2.append("1 0 0 1 50 700 Tm (Detailed Customization Requirements) Tj ET")
+    ops2.append("BT /Helv 11 Tf 0.3 0.3 0.3 rg")
+    ops2.append(f"1 0 0 1 50 680 Tm (Document No.: {doc_no}  |  Date: {date_str}) Tj ET")
     items = [
         ("Specifications", "Product dimensions: 120mm x 80mm x 45mm (±0.5mm)", "Required", "High"),
         ("Specifications", "Material: ABS plastic, UL94 V-0 rated", "Required", "High"),
@@ -272,7 +272,7 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     ops2.append("1 1 1 rg BT /HelvBold 10 Tf")
     headers = ["Category", "Requirement", "Status", "Priority"]
     for i, h in enumerate(headers):
-        ops2.append(f"{cols[i]+5} 645 Tm ({h}) Tj")
+        ops2.append(f"1 0 0 1 {cols[i]+5} 645 Tm ({h}) Tj")
     ops2.append("ET")
     y -= 20
     for idx, (cat, desc, status, prio) in enumerate(items):
@@ -283,20 +283,20 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
         ops2.append(f"40 {y-2} 530 18 re f")
         ops2.append("0.85 0.85 0.85 rg 40 {y-2} 530 18 re S")
         ops2.append("BT /Helv 9 Tf 0 0 0 rg")
-        ops2.append(f"{cols[0]} {y} Tm ({cat}) Tj")
+        ops2.append(f"1 0 0 1 {cols[0]} {y} Tm ({cat}) Tj")
         desc_short = desc if len(desc) <= 40 else desc[:37] + "..."
-        ops2.append(f"{cols[1]} {y} Tm ({desc_short}) Tj")
+        ops2.append(f"1 0 0 1 {cols[1]} {y} Tm ({desc_short}) Tj")
         if status == "Required":
             ops2.append("0.8 0.1 0.1 rg")
         else:
             ops2.append("0.1 0.6 0.1 rg")
-        ops2.append(f"{cols[2]} {y} Tm ({status}) Tj")
+        ops2.append(f"1 0 0 1 {cols[2]} {y} Tm ({status}) Tj")
         ops2.append("0 0 0 rg")
-        ops2.append(f"{cols[3]} {y} Tm ({prio}) Tj")
+        ops2.append(f"1 0 0 1 {cols[3]} {y} Tm ({prio}) Tj")
         ops2.append("ET")
         y -= 18
-    ops2.append("BT /Helv 8 Tf 0.3 0.3 0.3 rg 50 50 Tm")
-    ops2.append("(Please confirm your ability to meet these requirements by clicking the button on page 1.) Tj ET")
+    ops2.append("BT /Helv 8 Tf 0.3 0.3 0.3 rg")
+    ops2.append("1 0 0 1 50 50 Tm (Please confirm your ability to meet these requirements by clicking the button on page 1.) Tj ET")
     content2 = pdf.make_indirect(Stream(pdf, "\n".join(ops2).encode('utf-8')))
     page2.Contents = content2
     page2.Resources = resources
@@ -315,7 +315,6 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
         "/JS": String(browser_js)
     })
 
-    # FIXED: use docinfo (not doc_info)
     pdf.docinfo["/Title"] = String(f"Customization Requirements – {product} (v{version})")
     pdf.docinfo["/Author"] = String(buyer)
     pdf.docinfo["/Creator"] = String("Adobe Acrobat Pro DC")
