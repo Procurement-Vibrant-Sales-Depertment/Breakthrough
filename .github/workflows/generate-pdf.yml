@@ -20,7 +20,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install pikepdf
+        pip install pikepdf reportlab
 
     - name: Generate PDF (with default values)
       run: |
