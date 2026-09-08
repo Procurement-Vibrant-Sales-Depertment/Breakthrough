@@ -199,17 +199,22 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     # Build PDF
     pdf = pikepdf.new()
 
-    # Fonts
-    helv = pdf.make_indirect(Dictionary({
-        Name("/Type"): Name("/Font"),
-        Name("/Subtype"): Name("/Type1"),
-        Name("/BaseFont"): Name("/Helvetica")
-    }))
-    helv_bold = pdf.make_indirect(Dictionary({
-        Name("/Type"): Name("/Font"),
-        Name("/Subtype"): Name("/Type1"),
-        Name("/BaseFont"): Name("/Helvetica-Bold")
-    }))
+    # Fonts – use plain strings, no Name or Dictionary wrappers
+helv = pdf.make_indirect({
+    "/Type": "/Font",
+    "/Subtype": "/Type1",
+    "/BaseFont": "/Helvetica"
+})
+helv_bold = pdf.make_indirect({
+    "/Type": "/Font",
+    "/Subtype": "/Type1",
+    "/BaseFont": "/Helvetica-Bold"
+})
+font_res = pdf.make_indirect({
+    "/Helv": helv,
+    "/HelvBold": helv_bold
+})
+resources = pdf.make_indirect({"/Font": font_res})
     font_res = pdf.make_indirect(Dictionary({Name("/Helv"): helv, Name("/HelvBold"): helv_bold}))
     resources = pdf.make_indirect(Dictionary({Name("/Font"): font_res}))
 
