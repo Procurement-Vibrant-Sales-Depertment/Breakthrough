@@ -313,12 +313,11 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
             "/U": {"/S": "/JavaScript", "/JS": String("this.doc.trigger();")}
         }
     }
-    # Convert button dict to indirect object
     button_obj = pdf.make_indirect(button)
-    if page1.Annots:
-        page1.Annots.append(button_obj)
+    if "/Annots" in page1:
+        page1["/Annots"].append(button_obj)
     else:
-        page1.Annots = Array([button_obj])
+        page1["/Annots"] = Array([button_obj])
 
     # Metadata
     pdf.docinfo["/Title"] = String(f"Customization Requirements – {product} (v{version})")
